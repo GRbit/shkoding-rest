@@ -1,5 +1,7 @@
 package storage
 
+import "sort"
+
 type Student struct {
 	ID int64
 	Name string
@@ -19,10 +21,14 @@ func (s *Storage) GetStudents() ([]*Student) {
 	s.m.RLock()
 	defer s.m.RUnlock()
 
-	students := make([]*Student, len(s.m.Students), 0)
+	students := make([]*Student, 0, len(s.m.Students))
 	for id := range s.m.Students {
 		students = append(students, s.m.Students[id])
 	}
+
+	sort.Slice(students, func(i,j int) bool {
+		return students[i].ID < students[j].ID
+	})
 
 	return students
 }

@@ -37,10 +37,11 @@ func Serve() error {
 	r.Get("/health", handlers.Health)
 	r.Post("/logger_level", handlers.SetLoggerLevel())
 	r.Get("/students", handlers.GetStudent(s))
+	r.Get("/students/{studentID}", handlers.GetStudent(s))
 	r.Post("/students", handlers.NewStudent(s))
 	r.Put("/students", handlers.UpdateStudent(s))
 	r.Patch("/students", handlers.UpdateStudent(s))
-	r.Delete("/students", handlers.UpdateStudent(s))
+	r.Delete("/students/{studentID}", handlers.DeleteStudent(s))
 
 	log.Info().Msg("Everything configured. ListenAndServe.")
 

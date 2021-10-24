@@ -2,8 +2,8 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -12,18 +12,6 @@ import (
 
 type loggerLevel struct {
 	Level string `json:"logger_level"`
-}
-
-func (m *loggerLevel) validate() error {
-	m.Level = strings.ToLower(m.Level)
-
-	switch m.Level {
-	case "debug", "info", "warn", "error":
-	default:
-		return xerrors.Errorf("loggerLevel: unknown logger level: '%s'", m.Level)
-	}
-
-	return nil
 }
 
 // SetLoggerLevel set global logging level
@@ -35,11 +23,9 @@ func SetLoggerLevel() http.HandlerFunc {
 			msg loggerLevel
 		)
 
-		if err = bind(r, &msg); err != nil {
+		if err = json.NewDecoder(r.Body).Decode(&msg); err != nil {
 			writeResp(w, rID(r), nil, http.StatusBadRequest,
 				xerrors.Errorf("msg '%T' bind err: %w", msg, err))
-
-			return
 		}
 
 		switch msg.Level {

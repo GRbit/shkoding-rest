@@ -6,30 +6,10 @@ import (
 	"net/http"
 
 	"github.com/rs/zerolog/log"
-	"golang.org/x/xerrors"
 )
 
-type selfValidator interface {
-	validate() (code int, err error)
-}
-
-// bind function unmarshall http.Request.Body with json to data structure 'm'
-// and validate received message.
-func bind(r *http.Request, m selfValidator) (code int, err error) {
-	if err = json.NewDecoder(r.Body).Decode(m); err != nil {
-		return http.StatusBadRequest, xerrors.Errorf("request json decoding: %w", err)
-	}
-
-	log.Debug().
-		Str("request_id", rID(r)).
-		Interface("message", m).
-		Msg(fmt.Sprintf("message '%T' received", m))
-
-	return m.validate()
-}
-
 func writeResp(w http.ResponseWriter, reqID string, ret interface{}, code int, err error) {
-		w.WriteHeader(code)
+	w.WriteHeader(code)
 
 	lg := log.With().Str("component", "handlers").Str("request_id", reqID).Logger()
 	resp := make(map[string]interface{})

@@ -66,7 +66,11 @@ func UpdateStudent(s *storage.Storage) http.HandlerFunc {
 
 		var ret interface{}
 
-		s.NewStudent(m.Name, m.Telegram)
+		ret, ok := s.UpdateStudent(m.ID, m.Name, m.Telegram)
+		if !ok {
+			writeResp(w, rID(r), ret, http.StatusNotFound,
+				xerrors.Errorf("can't find student with id='%s'", m.ID))
+		}
 
 		writeResp(w, rID(r), ret, http.StatusOK, nil)
 	}
