@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"math/rand"
 	"net/http"
 
 	"github.com/rs/zerolog/log"
@@ -11,7 +10,7 @@ import (
 // xSystemTokenHeader is system token header
 const (
 	xSystemTokenHeader = "X-System-Token"
-	xRequestID         = "X-RequestID"
+	xContentType       = "Content-Type"
 	responseLoggingLen = 100
 )
 
@@ -46,7 +45,6 @@ func logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Info().
 			Str("path", r.URL.Path).
-			Str("request_id", r.Header.Get(xRequestID)).
 			Str("raw_query", r.URL.RawQuery).
 			Str("method", r.Method).
 			Str("event_type", "request_received").
@@ -61,7 +59,6 @@ func logger(next http.Handler) http.Handler {
 			Int("response_code", rec.status).
 			Str("path", r.URL.Path).
 			Str("event_type", "request_served").
-			Str("request_id", r.Header.Get(xRequestID)).
 			Msg("request served")
 	})
 }
@@ -75,7 +72,6 @@ func tokenChecker(systemToken string) func(http.Handler) http.Handler {
 				w.WriteHeader(http.StatusUnauthorized)
 
 				log.Info().Str("path", r.URL.Path).
-					Str("request_id", r.Header.Get(xRequestID)).
 					Str("system_token", r.Header.Get(xSystemTokenHeader)).
 					Str("method", r.Method).
 					Msg("invalid system token")
@@ -83,7 +79,6 @@ func tokenChecker(systemToken string) func(http.Handler) http.Handler {
 				if _, err := w.Write([]byte("invalid system token")); err != nil {
 					log.Error().Err(err).Str("path", r.URL.Path).
 						Str("method", r.Method).
-						Str("request_id", r.Header.Get(xRequestID)).
 						Msg("http.ResponseWriter Write() err")
 				}
 
@@ -95,20 +90,20 @@ func tokenChecker(systemToken string) func(http.Handler) http.Handler {
 	}
 }
 
-// tokenChecker grant access if system-token is valid
-func reqIDSetter(next http.Handler) http.Handler {
+// contentTypeChecker check that content-type header is application/json
+func contentTypeChecker(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if rID := r.Header.Get(xRequestID); rID == "" {
-			b := make([]byte, 16)
-			_, err := rand.Read(b) // nolint: gosec // we do not need security here, speed is better
-			if err != nil {
-				log.Error().Err(err).Str("errors_stack", fmt.Sprintf("%+v", err)).Msg("random generator error")
-				rID = "random_generator_error_1234567890"
-			} else {
-				rID = fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
-			}
+		if t := r.Header.Get(xContentType); t != "application/json" {
+			w.WriteHeader(http.StatusBadRequest)
 
-			r.Header.Set(xRequestID, rID)
+			lg := log.With().Str("component", "middleware").Logger()
+
+			b := []byte(fmt.Sprintf(
+				`{"result":null,"error":{"message":"unknown Content-Type to handle", "details":"%s"}}`, t))
+
+			if _, err := w.Write(b); err != nil {
+				lg.Error().Bytes("body", b).Err(err).Msg("body write err")
+			}
 		}
 
 		next.ServeHTTP(w, r)

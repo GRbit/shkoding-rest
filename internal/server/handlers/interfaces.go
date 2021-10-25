@@ -8,10 +8,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func writeResp(w http.ResponseWriter, reqID string, ret interface{}, code int, err error) {
+func writeResp(w http.ResponseWriter, ret interface{}, code int, err error) {
 	w.WriteHeader(code)
 
-	lg := log.With().Str("component", "handlers").Str("request_id", reqID).Logger()
+	lg := log.With().Str("component", "handlers").Logger()
 	resp := make(map[string]interface{})
 
 	if ret != nil {

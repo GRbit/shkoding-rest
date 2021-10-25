@@ -6,13 +6,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/GRbit/shkoding-rest/internal/server/handlers"
+	"github.com/GRbit/shkoding-rest/internal/storage"
 	"github.com/go-chi/chi"
 	"github.com/jessevdk/go-flags"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-
-	"github.com/GRbit/shkoding-rest/internal/server/handlers"
-	"github.com/GRbit/shkoding-rest/internal/storage"
 )
 
 // Serve runs http.ListenAndServe on go-chi router with address specified in Config
@@ -31,16 +30,22 @@ func Serve() error {
 	log.Info().Msg("Creating router...")
 
 	r := chi.NewRouter()
-	r.Use(tokenChecker(cfg.Service.SystemToken))
-	r.Use(reqIDSetter)
+	// r.Use(tokenChecker(cfg.Service.SystemToken))
 	r.Use(logger)
+	r.Use(contentTypeChecker)
 	r.Get("/health", handlers.Health)
 	r.Post("/logger_level", handlers.SetLoggerLevel())
+
 	r.Get("/students", handlers.GetStudent(s))
 	r.Get("/students/{studentID}", handlers.GetStudent(s))
+
+	r.Get("/students/new", handlers.NewStudentDocs())
 	r.Post("/students", handlers.NewStudent(s))
+
+	r.Get("/students/{studentID}/edit", handlers.UpdateStudentDocs())
 	r.Put("/students", handlers.UpdateStudent(s))
 	r.Patch("/students", handlers.UpdateStudent(s))
+
 	r.Delete("/students/{studentID}", handlers.DeleteStudent(s))
 
 	log.Info().Msg("Everything configured. ListenAndServe.")
@@ -52,8 +57,8 @@ func initService(cfg *serviceConfig) (s *storage.Storage, err error) {
 	initLogger(cfg)
 
 	s, err = storage.New(storage.Config{
-		Debug:           cfg.Service.Debug,
-		Logger:          &log.Logger,
+		Debug:  cfg.Service.Debug,
+		Logger: &log.Logger,
 	})
 
 	if err != nil {

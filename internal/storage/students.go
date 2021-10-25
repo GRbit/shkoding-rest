@@ -3,8 +3,8 @@ package storage
 import "sort"
 
 type Student struct {
-	ID int64
-	Name string
+	ID       int64
+	Name     string
 	Telegram string
 }
 
@@ -17,7 +17,7 @@ func (s *Storage) GetStudent(id int64) (*Student, bool) {
 	return ret, ok
 }
 
-func (s *Storage) GetStudents() ([]*Student) {
+func (s *Storage) GetStudents() []*Student {
 	s.m.RLock()
 	defer s.m.RUnlock()
 
@@ -26,7 +26,7 @@ func (s *Storage) GetStudents() ([]*Student) {
 		students = append(students, s.m.Students[id])
 	}
 
-	sort.Slice(students, func(i,j int) bool {
+	sort.Slice(students, func(i, j int) bool {
 		return students[i].ID < students[j].ID
 	})
 
@@ -39,7 +39,7 @@ func (s *Storage) NewStudent(name, tg string) *Student {
 
 	s.m.studentsIncrement += 1
 	newStudent := &Student{
-		ID: s.m.studentsIncrement,
+		ID:       s.m.studentsIncrement,
 		Name:     name,
 		Telegram: tg,
 	}
@@ -64,8 +64,6 @@ func (s *Storage) UpdateStudent(id int64, name, tg string) (*Student, bool) {
 	if tg != "" {
 		student.Telegram = tg
 	}
-
-	//s.m.Students[id] = student
 
 	return student, true
 }

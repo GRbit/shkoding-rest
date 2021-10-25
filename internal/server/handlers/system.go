@@ -24,7 +24,7 @@ func SetLoggerLevel() http.HandlerFunc {
 		)
 
 		if err = json.NewDecoder(r.Body).Decode(&msg); err != nil {
-			writeResp(w, rID(r), nil, http.StatusBadRequest,
+			writeResp(w, nil, http.StatusBadRequest,
 				xerrors.Errorf("msg '%T' bind err: %w", msg, err))
 		}
 
@@ -43,6 +43,6 @@ func SetLoggerLevel() http.HandlerFunc {
 
 		log.Logger = log.Logger.Level(lvl)
 
-		writeResp(w, rID(r), nil, http.StatusOK, nil)
+		writeResp(w, nil, http.StatusOK, nil)
 	}
 }

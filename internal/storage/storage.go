@@ -9,17 +9,16 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-
-type internalStorageMap struct{
-	Students map[int64]*Student
+type internalStorageMap struct {
+	Students          map[int64]*Student
 	studentsIncrement int64
 	sync.RWMutex
 }
 
 // Config database connection
 type Config struct {
-	Debug           bool
-	Logger          Logger
+	Debug  bool
+	Logger Logger
 }
 
 // Logger interface implements just standard Printf function
@@ -42,14 +41,13 @@ func New(cfg Config) (*Storage, error) {
 
 	if cfg.Debug {
 		go func() {
-			time.Sleep(time.Second*10)
+			time.Sleep(time.Second * 10)
 			storage.dbStats()
 		}()
 	}
 
 	return storage, nil
 }
-
 
 // dbStats is debug function to watch database state
 func (s *Storage) dbStats() {
